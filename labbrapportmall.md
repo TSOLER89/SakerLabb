@@ -143,4 +143,24 @@ Bevis efter: Efter ändringen kördes CodeQL på nytt på main. Alerten Untruste
 
 Om du valt att inte åtgärda ett fynd, skriv ned tre saker per bortval: risken, motivet och den kompenserande kontrollen. Sätt gärna ett datum för omprövning.
 
-*Skriv här, eller skriv "inga bortval".*
+*Bortval 1 – Content Security Policy (CSP) Header Not Set
+
+Risk:
+Utan CSP saknas ett extra skydd mot bland annat XSS.
+
+Motiv:
+Fyndet hade Medium risk och prioriterades efter de tre Critical-fynden som var mer direkt utnyttjbara.
+
+Kompenserande kontroll:
+ASP.NET Core använder normalt HTML-encoding, vilket minskar vissa XSS-risker.
+
+Bortval 2 – Absence of Anti-CSRF Tokens
+
+Risk:
+En angripare kan försöka lura en inloggad användare att skicka oönskade POST-anrop.
+
+Motiv:
+Fyndet hade Medium risk och Low confidence och prioriterades därför efter de tre Critical-fynden.
+
+Kompenserande kontroll:
+Applikationen använder app.UseAntiforgery(), men POST-endpointsen bör senare kontrolleras och skyddas med tokenvalidering.*
