@@ -85,38 +85,59 @@ Använd mönstret nedan per åtgärdat fynd. Varje åtgärd ska gå att spåra t
 
 ### Åtgärd 1
 
-```
-Fynd:        (nr och regel-id/alert från tabellen ovan)
-Plats:       (fil och rad, eller URL)
-Bevis före:  (skärmbild eller rapportutdrag som visar fyndet)
-Bedömning:   (verkligt eller falskt positivt, kort motiverat)
-Åtgärd:      (vad du ändrade, med commit-hash)
-Bevis efter: (ny körning: CodeQL-alerten står som Fixed, eller ZAP-larmet är borta ur den nya rapporten)
-```
+Åtgärd 1 – Command injection
+
+Fynd:3 – cs/command-line-injection – Uncontrolled command line
+
+Plats: SakerLabb.Web/Services/ImportService.cs, rad 57
+
+Bevis före: CodeQL visade alerten Uncontrolled command line med allvarlighetsgraden Critical. Dataflödesspåret visade att parametern host kom direkt från användaren via [FromQuery] i endpointen /diagnostik/ping och sedan användes i argumenten till cmd.exe.
+
+Bedömning: Jag bedömde fyndet som verkligt. Användarkontrollerad data byggdes direkt in i en kommandosträng som kördes via cmd.exe, utan tillräcklig validering. Detta kunde möjliggöra command injection och därmed påverka vilka kommandon som körs på servern.
+
+Åtgärd: Jag tog bort användningen av cmd.exe och startar i stället ping.exe direkt. Argumenten skickas separat med ProcessStartInfo.ArgumentList, och värdet i host valideras innan processen startas. På så sätt skickas användarens indata inte längre genom ett kommandoskal.
+
+Commit: 9df48c6 – Fix cs/command-line-injection in diagnostics ping
+
+Bevis efter: Efter ändringen kördes CodeQL på nytt på main. Alerten Uncontrolled command line med regel-id cs/command-line-injection visas nu som Fixed.
 
 ### Åtgärd 2
 
-```
-Fynd:
-Plats:
-Bevis före:
-Bedömning:
-Åtgärd:
-Bevis efter:
-```
+Åtgärd 2 – Osäker deserialisering
+
+Fynd: 2 – cs/unsafe-deserialization-untrusted-input – Deserialization of untrusted data
+
+Plats: SakerLabb.Web/Services/ImportService.cs, rad 40
+
+Bevis före: CodeQL visade alerten Deserialization of untrusted data med allvarlighetsgraden Critical. Dataflödesspåret visade att JSON-data kom direkt från användaren via [FromForm] string json och skickades vidare till JsonConvert.DeserializeObject. Deserialiseraren använde dessutom TypeNameHandling.All.
+
+Bedömning: Jag bedömde fyndet som verkligt. Eftersom användaren kunde styra JSON-innehållet samtidigt som TypeNameHandling.All var aktiverat kunde typinformationen i JSON påverka vilka .NET-objekt som skapades. Detta innebär risk för osäker deserialisering och kan beroende på miljön leda till exempelvis denial of service eller annan oönskad kodexekvering.
+
+Åtgärd: Jag tog bort TypeNameHandling.All och användningen av JsonConvert.DeserializeObject för den här användarkontrollerade datan. JSON behandlas i stället som data med System.Text.Json och JsonDocument.Parse. Jag lade även till kontroll så att tom JSON inte accepteras.
+
+Commit: 50c5fbf – Fix cs/unsafe-deserialization-untrusted-input
+
+Bevis efter: Efter ändringen kördes CodeQL på nytt på main. Alerten Deserialization of untrusted data med regel-id cs/unsafe-deserialization-untrusted-input visas nu som Fixed. GitHub visar även att fyndet fixerades via commit 50c5fbf.
 
 ### Åtgärd 3
 
-```
-Fynd:
-Plats:
-Bevis före:
-Bedömning:
-Åtgärd:
-Bevis efter:
-```
+Åtgärd 3 – Osäker XML- och DTD-hantering
 
----
+Fynd: 1 – cs/xml/insecure-dtd-handling – Untrusted XML is read insecurely
+
+Plats: SakerLabb.Web/Services/ImportService.cs, omkring rad 27–28
+
+Bevis före: CodeQL visade alerten Untrusted XML is read insecurely med allvarlighetsgraden Critical. Dataflödesspåret visade att XML-data kom direkt från användaren via [FromForm] string xml och skickades till XML-parsern. DtdProcessing.Parse och XmlUrlResolver användes, vilket tillät osäker DTD-hantering och externa XML-resurser.
+
+Bedömning: Jag bedömde fyndet som verkligt. Användarkontrollerad XML behandlades med DTD-parsning aktiverad och en extern resolver, vilket kunde möjliggöra XXE-relaterade attacker. En angripare skulle exempelvis kunna försöka få servern att läsa externa resurser eller orsaka denial of service.
+
+Åtgärd: Jag ändrade DtdProcessing från Parse till Prohibit och satte XmlResolver = null både i XmlReaderSettings och i XmlDocument. Därmed tillåts inte längre DTD-behandling eller externa XML-resurser vid import av användarkontrollerad XML.
+
+Commit: 79c09f0 – Fix cs/xml/insecure-dtd-handling
+
+Bevis efter: Efter ändringen kördes CodeQL på nytt på main. Alerten Untrusted XML is read insecurely med regel-id cs/xml/insecure-dtd-handling visas nu som Fixed. GitHub visar att fyndet fixerades via commit 79c09f0.
+
+
 
 ## 5. Eventuella bortval
 
