@@ -16,15 +16,23 @@ public class ImportService
         _http = http;
     }
 
+
+    //ändrad för att använda XmlReaderSettings och XmlDocument istället för XmlSerializer
+    //DtdProcessing.Prohibit innebär att XML med DTD stoppas. XmlResolver = null
+    //innebär att parsern inte får använda en resolver för att hämta externa XML-resurser.
     public string ImportXml(string xml)
     {
         var settings = new XmlReaderSettings
         {
-            DtdProcessing = DtdProcessing.Parse,
-            XmlResolver = new XmlUrlResolver()
+            DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null
         };
 
-        var document = new XmlDocument { XmlResolver = new XmlUrlResolver() };
+        var document = new XmlDocument
+        {
+            XmlResolver = null
+        };
+
         using var reader = XmlReader.Create(new StringReader(xml), settings);
         document.Load(reader);
 
