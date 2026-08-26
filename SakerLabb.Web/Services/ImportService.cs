@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Xml;
 using Newtonsoft.Json;
+using System.Text.Json; // behöver System.Text.Json för JSON-hantering
 
 namespace SakerLabb.Web.Services;
 
@@ -30,14 +31,19 @@ public class ImportService
         return document.DocumentElement?.InnerText ?? "";
     }
 
+
+    //ändrad för att använda System.Text.Json istället för Newtonsoft.Json
+    //Vi behöver bara läsa/importera JSON-data. Det finns ingen anledning att
+    //låta användaren välja vilka .NET-klasser som ska instansieras.
     public object? ImportJson(string json)
     {
-        var settings = new JsonSerializerSettings
+        if (string.IsNullOrWhiteSpace(json))
         {
-            TypeNameHandling = TypeNameHandling.All
-        };
+            throw new ArgumentException("JSON får inte vara tom.", nameof(json));
+        }
 
-        return JsonConvert.DeserializeObject(json, settings);
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
     }
 
     public async Task<string> FetchRemote(string url)
