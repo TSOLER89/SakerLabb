@@ -47,23 +47,39 @@ public class ImportService
         return await response.Content.ReadAsStringAsync();
     }
 
+    //ändrad för att använda ProcessStartInfo istället för Process.Start direkt
     public string Ping(string host)
     {
-        var process = new Process
+        if (string.IsNullOrWhiteSpace(host) ||
+            Uri.CheckHostName(host) == UriHostNameType.Unknown)
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = "/c ping -n 2 " + host,
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
+            throw new ArgumentException("Ogiltigt värdnamn.", nameof(host));
+        }
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "ping.exe",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        startInfo.ArgumentList.Add("-n");
+        startInfo.ArgumentList.Add("2");
+        startInfo.ArgumentList.Add(host);
+
+        using var process = new Process
+        {
+            StartInfo = startInfo
         };
 
         process.Start();
+
         var output = process.StandardOutput.ReadToEnd();
+
         process.WaitForExit(5000);
+
         return output;
     }
-}
+    }
