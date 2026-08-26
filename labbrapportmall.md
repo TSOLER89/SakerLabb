@@ -133,7 +133,7 @@ Bedömning: Jag bedömde fyndet som verkligt. Användarkontrollerad XML behandla
 
 Åtgärd: Jag ändrade DtdProcessing från Parse till Prohibit och satte XmlResolver = null både i XmlReaderSettings och i XmlDocument. Därmed tillåts inte längre DTD-behandling eller externa XML-resurser vid import av användarkontrollerad XML.
 
-Commit: 79c09f0 – Fix cs/xml/insecure-dtd-handling
+Commit: 79c090f – Fix cs/xml/insecure-dtd-handling
 
 Bevis efter: Efter ändringen kördes CodeQL på nytt på main. Alerten Untrusted XML is read insecurely med regel-id cs/xml/insecure-dtd-handling visas nu som Fixed. GitHub visar att fyndet fixerades via commit 79c09f0.
 
